@@ -19,9 +19,15 @@ Autoscale = $Autoscale
     AdditionalClusterInitSpecs = $DefaultClusterInitSpecs
     
         [[[cluster-init slurm:default:1.0.0]]]
+        [[[cluster-init cyclecloud/beegfs:default:1.0.0]]]
+        [[[cluster-init cyclecloud/beegfs:client:1.0.0]]]
 
         [[[configuration]]]
         slurm.version = $SlurmVersion
+        beegfs.client.cluster_name = $BeeGFSClusterName
+        beegfs.client.mount_point = $BeeGFSMountPt
+        
+       
 
     [[node master]]
     MachineType = $MasterMachineType
@@ -29,6 +35,7 @@ Autoscale = $Autoscale
     AdditionalClusterInitSpecs = $MasterClusterInitSpecs
     
         [[[cluster-init slurm:master:1.0.0]]]
+        [[[cluster-init cyclecloud/pbspro:master]]]
 
         [[[input-endpoint ganglia]]]
         PrivatePort = 8652
@@ -43,7 +50,8 @@ Autoscale = $Autoscale
     AdditionalClusterInitSpecs = $ExecuteClusterInitSpecs
 
         [[[cluster-init slurm:execute:1.0.0]]]
-
+        [[[cluster-init cyclecloud/pbspro:execute]]]
+        
         [[[network-interface]]]
         AssociatePublicIpAddress = $ExecuteNodesPublic
 
@@ -57,7 +65,12 @@ Order = 1
         HideLabel = true
         Config.Plugin = pico.widget.HtmlTemplateWidget
         Config.Template := "<table><tr><td><img src='https://github.com/CycleCloud/slurm/raw/master/logo.png' width='192' height='192'></td></tr><tr><td><p>Slurm is a highly configurable open source workload manager. See the <a href=\"https://www.schedmd.com/\" target=\"_blank\">Slurm project site</a> for an overview.</p></td></tr></table>"
-
+        
+        [[[parameter pbs beegfs]]]
+        HideLabel = true
+        Config.Plugin = pico.widget.HtmlTemplateWidget
+        Config.Template = '''<p>An example template that demonstrates how to mount a BeeGFS FS onto a PBS cluster</p>'''
+        
         [[[parameter Readme]]]
         HideLabel = true
         Config.Plugin = pico.widget.HtmlTemplateWidget
@@ -141,7 +154,23 @@ Order = 20
         Label = Slurm Version
         Description = Slurm version to use
         DefaultValue = 17.11.7-1
+ [[parameters BeegFS Settings]]        
+    Order = 25
+    Description = "Use a BeeGFS cluster as a NAS. Settings for defining the BeeGFS cluster"
 
+        [[[parameter BeeGFSClusterName]]]
+        Label = BeeGFS Cluster
+        Description = Name of the BeeGFS cluster to connect to. The BeeGFS cluster should be orchestrated by the same CycleCloud Server
+        Required = True
+        Config.Plugin = pico.form.QueryDropdown
+        Config.Query = select ClusterName as Name from Cloud.Node where Cluster().IsTemplate =!= True && ClusterInitSpecs["beegfs:manager"] isnt undefined
+        Config.SetDefault = false
+
+        [[[parameter BeeGFSMountPt]]]
+        Label = BeeGFS MountPt
+        Description = The mount point to mount the BeeGFS file server on.
+        DefaultValue = /mnt/beegfs
+        Required = True
 
     [[parameters Software]]
     Description = "Specify the base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker."
